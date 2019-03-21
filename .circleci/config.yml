@@ -1,0 +1,55 @@
+version: 2
+jobs:
+  delete_if_requested:
+    steps:
+      - checkout
+      - run:
+          name: Check the env file
+          command: |
+            MODE=`grep -E '^MODE:' ci.env | cut -d ':' -f 2`
+            REGION=`grep -E '^REGION:' ci.env | cut -d ':' -f 2`
+
+            if [ "$MODE" == "delete" && "${CIRCLE_BRANCH}" == "master" ]; then
+              echo "Unable to run on master branch."
+              exit 1
+            fi
+
+            echo "Mode is: $MODE"
+
+  build:
+    steps:
+      - checkout
+      - run:
+          name: Build Step 1
+          command: |
+            MODE=`grep -E '^MODE:' ci.env | cut -d ':' -f 2`
+            REGION=`grep -E '^REGION:' ci.env | cut -d ':' -f 2`
+
+            echo "Running step with mode $MODE and region $REGION."
+      - run:
+          name: Build Step 2
+          command: |
+            echo "MODE is still $MODE and REGION is still $REGION."
+
+  deploy:
+    steps:
+      - checkout
+      - run:
+          name: Deploy step
+          command: |
+            MODE=`grep -E '^MODE:' ci.env | cut -d ':' -f 2`
+            REGION=`grep -E '^REGION:' ci.env | cut -d ':' -f 2`
+
+            echo "Running Deploy step with mode $MODE and region $REGION."
+
+workflows:
+  version: 2
+  delete-build-deploy:
+    jobs:
+      - delete_if_requested
+      - build:
+          requires:
+            - delete_if_requested
+      - deploy:
+          requires:
+            - build
